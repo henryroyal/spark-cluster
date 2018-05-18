@@ -1,0 +1,74 @@
+- hosts: cluster
+  roles:
+    - andrewrothstein.hadoop
+    - andrewrothstein.spark
+    - role: resmo.ntp                                
+      ntp_config_server:                           
+        - pool.ntp.org                    
+        - wwv.nist.gov   
+  
+  tasks:
+    - name: hadoop user bashrc
+      template:
+          src: templates/bashrc.j2
+          dest: /usr/local/hadoop/.bashrc
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+
+    - name: hdfs config
+      template:
+          src: templates/hdfs-site.j2
+          dest: /usr/local/hadoop/etc/hadoop/hdfs-site.xml
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+
+    - name: hdfs slaves file
+      template:
+          src: templates/hdfs-datanodes.j2
+          dest: /usr/local/hadoop/etc/hadoop/slaves
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+
+    - name: hadoop core config
+      template:
+          src: templates/core-site.j2
+          dest: /usr/local/hadoop/etc/hadoop/core-site.xml
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+    
+    - name: mapred-site.xml config
+      template:
+          src: templates/mapred-site.j2
+          dest: /usr/local/hadoop/etc/hadoop/mapred-site.j2
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+
+    - name: yarn site config
+      template:
+          src: templates/yarn-site.j2
+          dest: /usr/local/hadoop/etc/hadoop/yarn-site.xml
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+
+    - name: spark slaves file
+      template:
+          src: templates/spark-slaves.j2
+          dest: /usr/local/spark/conf/slaves
+          owner: hadoop
+          group: hadoop
+          mode: 0640
+
+    - name: spark.env file
+      template:
+        src: templates/spark-env.j2
+        dest: /usr/local/spark/conf/spark-env.sh
+        owner: hadoop
+        group: hadoop
+        mode: 0640
+

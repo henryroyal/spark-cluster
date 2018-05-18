@@ -1,0 +1,13 @@
+{
+  "hadoop_version": "2.7.4",
+  "spark_master": "",
+  "spark_webui_port": "8080",
+  "spark_slaves": [""],
+  "hdfs_namenode": "",
+  "hdfs_namenode_port": "",
+  "hdfs_datanodes": [""],
+  "hdfs_datadir": "",
+  "hdfs_namedir": "",
+  "hdfs_replication": 2,
+  "yarn_resource_manager": ""
+}

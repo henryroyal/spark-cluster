@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+            <name>dfs.namenode.name.dir</name>
+            <value>{{hdfs_namedir}}</value>
+    </property>
+
+    <property>
+            <name>dfs.datanode.data.dir</name>
+            <value>{{hdfs_datadir}}</value>
+    </property>
+
+    <property>
+            <name>dfs.replication</name>
+            <value>{{hdfs_replication}}</value>
+    </property>
+</configuration>
+
