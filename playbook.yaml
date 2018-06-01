@@ -1,13 +1,41 @@
 - hosts: cluster
   roles:
-    - andrewrothstein.hadoop
-    - andrewrothstein.spark
+    - role: andrewrothstein.hadoop
+      hadoop_version: "{{ hadoop_version }}"
+    
+    - role: andrewrothstein.spark
+      #spark_ver: "{{ spark_version }}"
+      #spark_hadoop_ver: "{{ spark_hadoop_version }}"
+
     - role: resmo.ntp                                
       ntp_config_server:                           
         - pool.ntp.org                    
         - wwv.nist.gov   
   
   tasks:
+    - name: upgrade yum packages
+      yum:
+          name: '*'
+          state: latest
+
+    # https://spark.apache.org/docs/latest/security.html#configuring-ports-for-network-security
+    - name: open firewall ports
+      with_items:
+        - "{{ spark_rest_port }}"
+        - "{{ spark_master_port }}"
+        - "{{ spark_master_webui_port }}"
+        - "{{ spark_worker_webui_port }}"                                       
+        - "{{ spark_driver_port }}"
+        - "{{ spark_blockmanager_port }}"
+        - "{{ spark_ui_port }}"    
+        - "{{ hdfs_namenode_port }}"                                            
+        - "{{ spark_shuffle_service_port }}"                                    
+        - "{{ spark_history_server_port }}"
+      firewalld:
+        port: "{{ item }}/tcp"
+        permanent: true
+        state: enabled
+
     - name: hadoop user bashrc
       template:
           src: templates/bashrc.j2
