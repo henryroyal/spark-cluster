@@ -1,11 +1,17 @@
 - hosts: cluster
+
+  vars:
+    service_user_home: "/home/{{ service_user_name }}"
+
   roles:
     - role: andrewrothstein.hadoop
       hadoop_version: "{{ hadoop_version }}"
-    
+      hadoop_parent_dir: "{{ service_parent_dir }}" 
+
     - role: andrewrothstein.spark
-      #spark_ver: "{{ spark_version }}"
-      #spark_hadoop_ver: "{{ spark_hadoop_version }}"
+      spark_ver: "{{ spark_version }}"
+      spark_hadoop_ver: "{{ spark_hadoop_version }}"
+      spark_parent_dir: "{{ service_parent_dir }}"
 
     - role: resmo.ntp                                
       ntp_config_server:                           
@@ -15,8 +21,68 @@
   tasks:
     - name: upgrade yum packages
       yum:
-          name: '*'
-          state: latest
+        name: '*'
+        state: latest
+
+    - name: hadoop group config
+      group:
+        name: hadoop
+        gid: 5000
+
+    - name: hadoop user config
+      user:
+        name: hadoop
+        group: hadoop
+        home: "{{ service_user_home }}"
+        uid: 5000
+
+    - name: hadoop ssh directory
+      file:
+        path: "{{ service_user_home }}/.ssh"
+        owner: hadoop
+        group: hadoop
+        state: directory
+        mode: 0750
+
+    - name: service user public key
+      template:
+        src: templates/ssh/public.j2
+        dest: "{{ service_user_home }}/.ssh/id_rsa.pub"
+        owner: hadoop
+        group: hadoop
+        mode: 0640
+
+    - name: service user private key
+      template:
+        src: templates/ssh/private.j2
+        dest: "{{ service_user_home }}/.ssh/id_rsa"
+        owner: hadoop
+        group: hadoop
+        mode: 0600
+
+    - name: service user authorized key
+      template:
+        src: templates/ssh/public.j2
+        dest: "{{ service_user_home }}/.ssh/authorized_keys"
+        owner: hadoop
+        group: hadoop
+        mode: 0600
+
+    - name: hadoop directory permissions
+      file:
+        path: "{{ service_parent_dir }}/hadoop-{{ hadoop_version }}"
+        owner: hadoop
+        group: hadoop
+        recurse: yes
+        state: directory
+
+    - name: spark directory permissions
+      file:
+        path: "{{ service_parent_dir }}/spark-{{ spark_version }}-bin-{{ spark_hadoop_version }}"
+        owner: hadoop
+        group: hadoop
+        recurse: yes
+        state: directory
 
     # https://spark.apache.org/docs/latest/security.html#configuring-ports-for-network-security
     - name: open firewall ports
@@ -24,78 +90,88 @@
         - "{{ spark_rest_port }}"
         - "{{ spark_master_port }}"
         - "{{ spark_master_webui_port }}"
-        - "{{ spark_worker_webui_port }}"                                       
+        - "{{ spark_worker_port }}"
+        - "{{ spark_worker_webui_port }}"
         - "{{ spark_driver_port }}"
         - "{{ spark_blockmanager_port }}"
-        - "{{ spark_ui_port }}"    
-        - "{{ hdfs_namenode_port }}"                                            
-        - "{{ spark_shuffle_service_port }}"                                    
+        - "{{ spark_ui_port }}"
+        - "{{ hdfs_namenode_port }}"
+        - "{{ spark_shuffle_service_port }}"
         - "{{ spark_history_server_port }}"
       firewalld:
         port: "{{ item }}/tcp"
         permanent: true
         state: enabled
+        immediate: true
 
     - name: hadoop user bashrc
       template:
-          src: templates/bashrc.j2
-          dest: /usr/local/hadoop/.bashrc
-          owner: hadoop
-          group: hadoop
-          mode: 0640
+        src: templates/bashrc.j2
+        dest: "{{ service_user_home }}/.bashrc"
+        owner: hadoop
+        group: hadoop
+        mode: 0640
 
     - name: hdfs config
       template:
-          src: templates/hdfs-site.j2
-          dest: /usr/local/hadoop/etc/hadoop/hdfs-site.xml
-          owner: hadoop
-          group: hadoop
-          mode: 0640
+        src: templates/hdfs-site.j2
+        dest: /usr/local/hadoop/etc/hadoop/hdfs-site.xml
+        owner: hadoop
+        group: hadoop
+        mode: 0640
 
     - name: hdfs slaves file
       template:
-          src: templates/hdfs-datanodes.j2
-          dest: /usr/local/hadoop/etc/hadoop/slaves
-          owner: hadoop
-          group: hadoop
-          mode: 0640
+        src: templates/hdfs-datanodes.j2
+        dest: /usr/local/hadoop/etc/hadoop/slaves
+        owner: hadoop
+        group: hadoop
+        mode: 0640
 
     - name: hadoop core config
       template:
-          src: templates/core-site.j2
-          dest: /usr/local/hadoop/etc/hadoop/core-site.xml
-          owner: hadoop
-          group: hadoop
-          mode: 0640
-    
+        src: templates/core-site.j2
+        dest: /usr/local/hadoop/etc/hadoop/core-site.xml
+        owner: hadoop
+        group: hadoop
+        mode: 0640
+ 
     - name: mapred-site.xml config
       template:
-          src: templates/mapred-site.j2
-          dest: /usr/local/hadoop/etc/hadoop/mapred-site.j2
-          owner: hadoop
-          group: hadoop
-          mode: 0640
+        src: templates/mapred-site.j2
+        dest: /usr/local/hadoop/etc/hadoop/mapred-site.j2
+        owner: hadoop
+        group: hadoop
+        mode: 0640
 
     - name: yarn site config
       template:
-          src: templates/yarn-site.j2
-          dest: /usr/local/hadoop/etc/hadoop/yarn-site.xml
-          owner: hadoop
-          group: hadoop
-          mode: 0640
+        src: templates/yarn-site.j2
+        dest: /usr/local/hadoop/etc/hadoop/yarn-site.xml
+        owner: hadoop
+        group: hadoop
+        mode: 0640
 
     - name: spark slaves file
       template:
-          src: templates/spark-slaves.j2
-          dest: /usr/local/spark/conf/slaves
-          owner: hadoop
-          group: hadoop
-          mode: 0640
+        src: templates/spark-slaves.j2
+        dest: /usr/local/spark/conf/slaves
+        owner: hadoop
+        group: hadoop
+        mode: 0640
 
     - name: spark.env file
       template:
         src: templates/spark-env.j2
         dest: /usr/local/spark/conf/spark-env.sh
+        owner: hadoop
+        group: hadoop
+        mode: 0640
+
+    - name: spark-defaults file
+      template:
+        src: templates/spark-defaults.j2
+        dest: /usr/local/spark/conf/spark-defaults.sh
         owner: hadoop
         group: hadoop
         mode: 0640

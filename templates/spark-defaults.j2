@@ -1,0 +1,17 @@
+spark.master                     spark://{{spark_master}}:{{spark_master_port}}
+
+spark.eventLog.enabled           true
+spark.eventLog.dir               hdfs://{{hdfs_namenode}}:{{hdfs_namenode_port}}/sparkEventLog
+
+spark.serializer                 org.apache.spark.serializer.KryoSerializer
+spark.driver.memory              5g
+
+#spark.executor.extraJavaOptions  -XX:+PrintGCDetails -Dkey=value -Dnumbers="one two three"
+spark.executor.logs.rolling.strategy size 
+spark.executor.logs.rolling.maxSize 50000000
+spark.executor.logs.rolling.maxRetainedFiles 10
+
+#spark.ssl.fs
+#spark.ssl.ui
+#spark.ssl.standalone
+#spark.ssl.historyServer
